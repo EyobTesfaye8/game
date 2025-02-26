@@ -3,10 +3,16 @@ import random
 
 pygame.init()
 screen = pygame.display.set_mode((1000,1000))
+test_surf = pygame.Surface((100,100))
+test_surf.fill('red')
+clock = pygame.time.Clock()
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+    screen.blit(test_surf, (random.randint(0, 900), random.randint(0, 900)))
+
+    
     pygame.display.update()
-    pygame.time.Clock()
+    clock.tick(60)
