@@ -11,7 +11,7 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-    screen.blit(test_surf, (random.randint(0, 900), random.randint(0, 900)))
+    screen.blit(test_surf, (500,400))
 
     
     pygame.display.update()
