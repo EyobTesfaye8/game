@@ -4,10 +4,11 @@ import random
 class Enemy:
     def __init__(self, surface,color):
         self.surf = surface
-        self.rect = self.surf.get_rect(bottomright = (random.randint(220,1500),-100))
+        self.rect = self.surf.get_rect(bottomright = (random.randint(220,1500),random.randint(-700,-100)))
         self.color = color
     def move(self):
         self.rect.y += 5
+
 def movement():
     keys = pygame.key.get_pressed()
     if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and char_rect.right < 1500:
@@ -45,11 +46,17 @@ def villans(villans):
 def Scollisions(charRect, Villain_rect):
     for Vrect in Villain_rect:
         if charRect.colliderect(Vrect.rect):
-            print ("collide")
-            return True
+            return False
     else: 
-        return False
+        return True
 
+def Bcollision(bullets, villanis):
+    if villanis:
+        for Bul in bullets:
+            for Vil in villanis:
+                if Bul.colliderect(Vil.rect):
+                    villanis.remove(Vil)
+                    bullets.remove(Bul)
 
 pygame.init()
 screen = pygame.display.set_mode((1500,1500))
@@ -69,23 +76,24 @@ bullet = pygame.Surface((25,25)).convert_alpha()
 bullet_rect = bullet.get_rect(midbottom = char_rect.midtop)
 bullet.fill('blue')
 
-villan1 = Enemy(pygame.Surface((75,150)).convert_alpha(), "yellow")
+villan1 = Enemy(pygame.Surface((100,150)).convert_alpha(), "yellow")
 villan1.surf.fill("yellow")
 
-villan2 = Enemy(pygame.Surface((80,80)).convert_alpha(), "gray")
+villan2 = Enemy(pygame.Surface((30,80)).convert_alpha(), "gray")
 villan2.surf.fill("gray")
 
 villan3 = Enemy(pygame.Surface((110,50)).convert_alpha(), "purple")
 villan3.surf.fill("purple")
 
 lobby = pygame.Surface((1500,1500)).convert_alpha()
+lobby_rect = lobby.get_rect(topleft = (0,0))
 lobby.fill('black')
 
 shotT = 400
 shootTiming = pygame.USEREVENT + 1
 pygame.time.set_timer(shootTiming, shotT)
 villansTime = pygame.USEREVENT + 2
-pygame.time.set_timer(villansTime, random.randint(1000, 3000))
+pygame.time.set_timer(villansTime,1500)
 
 clock = pygame.time.Clock()
 while True:
@@ -99,16 +107,12 @@ while True:
                 bullet_rect_list.append(bullet.get_rect(midbottom = char_rect.midtop))
             if event.type == villansTime:
                 c = random.randint(0,2)
-                if c == 0:
+                if c > 0:
                     villan_rect_list.append(Enemy(villan1.surf, "yellow"))
-                elif c == 1:
+                if c < 2:
                     villan_rect_list.append(Enemy(villan2.surf, "gray"))
-                else:
-                    villan_rect_list.append(Enemy(villan3.surf, "purple"))
-            if Scollisions:
-                print ("Game Over")
-                game_active = False    
-            
+                if c == 0 or c == 2:
+                    villan_rect_list.append(Enemy(villan3.surf, "purple"))   
     if game_active:
         movement()
         screen.blit(background_surf, back_rect)
@@ -116,8 +120,11 @@ while True:
         villan_rect_list = villans(villan_rect_list)
         screen.blit(char, char_rect)
         Scollisions(char_rect, villan_rect_list)
+        Bcollision(bullet_rect_list,villan_rect_list)
+
+        game_active = Scollisions(char_rect,villan_rect_list)
     else: 
-        screen.blit(lobby, back_rect)
+        screen.blit(lobby, lobby_rect)
     
     pygame.display.update()
     clock.tick(60)
