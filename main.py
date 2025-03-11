@@ -7,13 +7,27 @@ class Enemy:
         self.rect = self.surf.get_rect(bottomright = (random.randint(220,1500),random.randint(-700,-100)))
         self.color = color
     def move(self):
-        self.rect.y += 5
+        self.rect.y += 4
 
 class powerUps(Enemy):
     def __init__(self, surface,color):
         super().__init__(surface, color)
     def move(self):
         self.rect.y += 10
+
+class EnemyBullets(Enemy):
+    def __init__(self, surface, color):
+        super().__init__(surface,color)
+        self.rect2 = self.surf.get_rect(midtop = self.rect.midbottom)
+    def move(self):
+        if self.color == "fast":
+            self.rect2.y += 15
+            # print(f"{pygame.}")
+        if self.color == "mid":
+            self.rect2.y += 10
+        if self.color == "slow":
+            self.rect2.y += 7
+
 
 def movement():
     keys = pygame.key.get_pressed()
@@ -40,11 +54,11 @@ def villans(villans):
         for villan_rect in villans:
             villan_rect.move()
             if villan_rect.color == "yellow":
-                screen.blit(villan1.surf, villan_rect)
+                screen.blit(villan1.surf, villan_rect.rect)
             elif villan_rect.color == "gray":
-                screen.blit(villan2.surf, villan_rect)
+                screen.blit(villan2.surf, villan_rect.rect)
             elif villan_rect.color == "purple":
-                screen.blit(villan3.surf, villan_rect)
+                screen.blit(villan3.surf, villan_rect.rect)
         villans = [villan_rect for villan_rect in villans if villan_rect.rect.top < 1500]
         return villans
     else:return []
@@ -55,6 +69,15 @@ def Scollisions(charRect, Villain_rect):
             return False
     else: 
         return True
+
+def POWERcollisions(powerups, charRect):
+    global villan_rect_list, scoree
+    for power in powerups:
+        if power.rect.colliderect(charRect):
+            print("hi")
+            villan_rect_list = []
+            powerups.remove(power)
+            scoree += 1000
 
 def Bcollision(bullets, villanis):
     if villanis:
@@ -91,6 +114,14 @@ def powerups(PowerUPs):
         return PowerUPs
     else:return []
 
+def enemyShooting(enemybullets):
+    if enemybullets:
+        for bullet in enemybullets:
+            bullet.move()
+            screen.blit(enemyBullet.surf, enemyBullet_rect1)
+        enemybullets = [bullet for bullet in enemybullets if bullet.rect2.top < 1500]
+        return enemybullets
+    else: return []  
 
 pygame.init()
 screen = pygame.display.set_mode((1500,1500))
@@ -98,6 +129,7 @@ pygame.display.set_caption("PEW PEW GAME")
 bullet_rect_list = []
 villan_rect_list = []
 powerUP_rect_list = []
+enemyBullets_list = []
 speed = 5
 game_active = True
 level = 1
@@ -117,14 +149,19 @@ char_scaled_rect = char_scaled.get_rect(center = (750,750))
 bullet = pygame.transform.rotozoom(pygame.image.load("bullet/not_mine.svg").convert_alpha(),0,0.3)
 bullet_rect = bullet.get_rect(midbottom = char_rect.midtop)
 
-powerUP = powerUps(pygame.Surface((50,50)).convert_alpha(),"green")
-powerUP.surf.fill("green")
+powerUP = powerUps(pygame.transform.rotozoom(pygame.image.load('powerUP/pwr.svg').convert_alpha(),0,0.2),"green")
+# powerUP.surf.fill("green")
 
 villan1 = Enemy(pygame.transform.rotozoom(pygame.image.load('enemies/villain1.png').convert_alpha(),180,2.5), "yellow")
 
 villan2 = Enemy(pygame.transform.rotozoom(pygame.image.load('enemies/villain3.png').convert_alpha(),180,1.5), "gray")
 
 villan3 = Enemy(pygame.transform.rotozoom(pygame.image.load('enemies/villain2.png').convert_alpha(),180,2), "purple")
+
+enemyBullet = EnemyBullets(pygame.transform.rotozoom(pygame.image.load("bullet/mybullet.svg").convert_alpha(),0,0.3),"fast")
+enemyBullet_rect1 = enemyBullet.surf.get_rect(midtop = villan1.rect.midbottom)
+enemyBullet_rect2 = enemyBullet.surf.get_rect(midtop = villan2.rect.midbottom)
+enemyBullet_rect3 = enemyBullet.surf.get_rect(midtop = villan3.rect.midbottom)
 
 lobby = pygame.Surface((1500,1500)).convert_alpha()
 lobby_rect = lobby.get_rect(topleft = (0,0))
@@ -133,11 +170,13 @@ lobby.fill('black')
 shootTiming = pygame.USEREVENT + 1
 villansTime = pygame.USEREVENT + 2
 powerUP_time = pygame.USEREVENT + 3
+enemyShootineTime = pygame.USEREVENT + 4
 Vspeed = 1500
 Sspeed = 400
 pygame.time.set_timer(villansTime,Vspeed)
 pygame.time.set_timer(shootTiming, Sspeed)
-pygame.time.set_timer(powerUP_time, 10000)
+pygame.time.set_timer(powerUP_time, 15000)
+pygame.time.set_timer(enemyShootineTime, 300)
 clock = pygame.time.Clock()
 while True:
     for event in pygame.event.get():
@@ -157,12 +196,15 @@ while True:
                     villan_rect_list.append(Enemy(villan3.surf, "purple")) 
             if event.type == powerUP_time:
                 powerUP_rect_list.append(powerUps(powerUP.surf, "green"))
+            if event.type == enemyShootineTime:
+                enemyBullets_list.append(EnemyBullets(enemyBullet.surf, "fast"))
         else: 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 game_active = True
                 bullet_rect_list = []
                 villan_rect_list = []
                 powerUP_rect_list = []
+                enemyBullets_list = []
                 char_rect.midbottom = (750,1400)
                 scoree = 0
     if game_active:
@@ -172,9 +214,11 @@ while True:
         bullet_rect_list = shooting(bullet_rect_list)
         villan_rect_list = villans(villan_rect_list)
         powerUP_rect_list = powerups(powerUP_rect_list)
+        POWERcollisions(powerUP_rect_list, char_rect)
         Scollisions(char_rect, villan_rect_list)
         score(bullet_rect_list,villan_rect_list)
         Bcollision(bullet_rect_list,villan_rect_list)
+        enemyShooting(enemyBullets_list)
 
         level_surf = font3.render("LEVEL: "+ str(level),False,"white")
         level_surf_rect = level_surf.get_rect(topright = (1450,50))
